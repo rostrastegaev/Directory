@@ -1,0 +1,17 @@
+{
+  "Test": {
+    "PropertyInt": "25",
+    "PropertyString": "test",
+    "TestSection": {
+      "PropertyInt": "30",
+      "PropertyString": "test1"
+    }
+  },
+  "Auth": {
+    "Issuer": "Directory",
+    "Audience": "http://localhost:50956/",
+    "Key": "6266directory3223secret3223key6266",
+    "Lifetime": "24",
+    "PasswordLength": "6"
+  }
+}
