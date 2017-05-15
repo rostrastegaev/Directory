@@ -18,6 +18,7 @@ namespace DAL
             builder.HasOne(r => r.User)
                 .WithMany(u => u.Records)
                 .HasForeignKey(r => r.UserId)
+                .HasPrincipalKey(u => u.Id)
                 .IsRequired();
         }
     }

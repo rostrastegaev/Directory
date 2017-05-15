@@ -9,6 +9,7 @@ namespace DAL
         public byte[] Password { get; set; }
 
         public ICollection<Record> Records { get; set; }
+        public RefreshToken Token { get; set; }
 
         public void Update(User user)
         {
