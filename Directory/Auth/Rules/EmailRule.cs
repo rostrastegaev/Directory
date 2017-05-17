@@ -15,7 +15,7 @@ namespace Auth
                 TimeSpan.FromSeconds(2));
         }
 
-        public Result Validate(IAuthRequest request)
+        public Result Validate(RegistrationRequest request)
         {
             Result result = new Result(true);
             if (!_regex.IsMatch(request.Email))

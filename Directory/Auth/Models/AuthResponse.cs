@@ -1,12 +1,18 @@
-﻿namespace Auth
+﻿using System;
+
+namespace Auth
 {
     public class AuthResponse : IAuthResponse
     {
         public string AccessToken { get; }
+        public string RefreshToken { get; }
+        public DateTime Expiration { get; }
 
-        public AuthResponse(string token)
+        public AuthResponse(string accessToken, string refreshToken, DateTime expiration)
         {
-            AccessToken = token;
+            AccessToken = accessToken;
+            RefreshToken = refreshToken;
+            Expiration = expiration;
         }
     }
 }

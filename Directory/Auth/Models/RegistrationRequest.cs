@@ -1,8 +1,6 @@
-﻿using System.Security.Claims;
-
-namespace Auth
+﻿namespace Auth
 {
-    public class AuthRequest : IAuthRequest
+    public class RegistrationRequest
     {
         public string Email { get; set; }
         public string Password { get; set; }
