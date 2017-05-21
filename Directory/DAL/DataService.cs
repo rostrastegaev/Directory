@@ -7,7 +7,6 @@ namespace DAL
         public DbSet<User> Users { get; set; }
         public DbSet<Record> Records { get; set; }
         public DbSet<Image> Images { get; set; }
-        public DbSet<RefreshToken> Tokens { get; set; }
 
         public DataService(DbContextOptions<DataService> options) : base(options)
         { }
@@ -17,7 +16,6 @@ namespace DAL
             builder.AddConfiguration(new UserConfig());
             builder.AddConfiguration(new RecordConfig());
             builder.AddConfiguration(new ImageConfig());
-            builder.AddConfiguration(new RefreshTokenConfig());
         }
 
         public IRepository<T> GetRepository<T>() where T : class, IEntity, new() =>

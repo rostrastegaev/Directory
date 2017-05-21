@@ -35,7 +35,7 @@ namespace Tests.DAL
 
         public int SaveChanges()
         {
-            return 0;
+            return 1;
         }
 
         public IRepository<T> GetRepository<T>() where T : class, IEntity, new()

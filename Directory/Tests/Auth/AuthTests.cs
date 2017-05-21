@@ -1,8 +1,8 @@
 ﻿using Auth;
 using Common;
+using DAL;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Tests.Common;
@@ -22,11 +22,17 @@ namespace Tests.Auth
             ConfigurationServiceTests.ClassInit(null);
             IConfigurationService configService = ConfigurationServiceTests.ConfigService;
             AuthConfig config = configService.GetConfig<AuthConfig>("Auth");
-            AuthService = new AuthService(config,
-                new DataServiceMock(),
+            HashAlgorithm hash = SHA256.Create();
+            var dataService = new DataServiceMock();
+            AuthService = new AuthService(dataService,
                 Encoding.Unicode,
                 SHA256.Create(),
-                new IAuthRule[] { new EmailRule(), new PasswordRule(config) },
+                new IAuthRule[] { new EmailRule(), new PasswordRule(config), new EmailConflictRule(dataService) },
+                new IGrantProvider[]
+                {
+                    new PasswordGrantProvider(Encoding.Unicode, hash, dataService, config),
+                    new RefreshTokenGrantProvider(config)
+                },
                 new Logger<AuthService>(factory));
 
         }
@@ -34,43 +40,67 @@ namespace Tests.Auth
         [TestMethod]
         public void RegistrationTest()
         {
-            Result<IAuthResponse> resultResponse = AuthService.Register(new AuthRequest()
+            Result resultResponse = AuthService.Register(new RegistrationRequest()
             {
                 Email = "regTest@test.com",
                 Password = "123456",
                 Confirmation = "123456"
-            }, new ClaimsPrincipal()).Result;
+            }).Result;
             Assert.IsTrue(resultResponse.IsSuccess);
-            Assert.IsNotNull(resultResponse.Data.AccessToken);
         }
 
         [TestMethod]
-        public void SignInTest()
+        public void SignInPasswordTest()
         {
-            Result<IAuthResponse> resultResponse = AuthService.SignIn(new AuthRequest()
+            Result<AuthResponse> resultResponse = AuthService.SignIn(new SignInRequest()
             {
                 Email = "test@test.com",
-                Password = " 1"
-            }, new ClaimsPrincipal()).Result;
+                Password = " 1",
+                GrantType = "password"
+            }).Result;
             Assert.IsTrue(resultResponse.IsSuccess);
             Assert.IsNotNull(resultResponse.Data.AccessToken);
+            Assert.IsNotNull(resultResponse.Data.RefreshToken);
+        }
+
+        [TestMethod]
+        public void SignInRefreshTest()
+        {
+            Result<AuthResponse> resultResponse = AuthService.SignIn(new SignInRequest()
+            {
+                Email = "test@test.com",
+                Password = " 1",
+                GrantType = "password"
+            }).Result;
+            Assert.IsTrue(resultResponse.IsSuccess);
+            Assert.IsNotNull(resultResponse.Data.AccessToken);
+            Assert.IsNotNull(resultResponse.Data.RefreshToken);
+
+            Result<AuthResponse> refreshResponse = AuthService.SignIn(new SignInRequest()
+            {
+                GrantType = "refresh_token",
+                Token = resultResponse.Data.RefreshToken
+            }).Result;
+            Assert.IsTrue(refreshResponse.IsSuccess);
+            Assert.IsNotNull(refreshResponse.Data.AccessToken);
         }
 
         [TestMethod]
         public void GetIdTest()
         {
-            ClaimsPrincipal principal = new ClaimsPrincipal();
-            Result<IAuthResponse> resultResponse = AuthService.SignIn(new AuthRequest()
+            Result<AuthResponse> resultResponse = AuthService.SignIn(new SignInRequest()
             {
                 Email = "test@test.com",
-                Password = " 1"
-            }, principal).Result;
+                Password = " 1",
+                GrantType = "password"
+            }).Result;
             Assert.IsTrue(resultResponse.IsSuccess);
             Assert.IsNotNull(resultResponse.Data.AccessToken);
+            Assert.IsNotNull(resultResponse.Data.RefreshToken);
 
-            Result<int> resultId = AuthService.GetId(principal);
-            Assert.IsTrue(resultId.IsSuccess);
-            Assert.AreEqual(1, resultId.Data);
+            Result<User> userResult = AuthService.GetUser(resultResponse.Data.AccessToken);
+            Assert.IsTrue(userResult.IsSuccess);
+            Assert.AreEqual(1, userResult.Data.Id);
         }
 
         [TestMethod]
@@ -78,58 +108,55 @@ namespace Tests.Auth
         {
             // email in use
             {
-                Result<IAuthResponse> response = AuthService.Register(new AuthRequest()
+                Result response = AuthService.Register(new RegistrationRequest()
                 {
                     Email = "test@test.com",
                     Password = "123456",
                     Confirmation = "123456"
-                }, new ClaimsPrincipal()).Result;
+                }).Result;
                 Assert.IsFalse(response.IsSuccess);
-                Assert.IsNull(response.Data);
             }
             // password length
             {
-                Result<IAuthResponse> response = AuthService.Register(new AuthRequest()
+                Result response = AuthService.Register(new RegistrationRequest()
                 {
                     Email = "passLength@test.com",
                     Password = "123",
                     Confirmation = "123"
-                }, new ClaimsPrincipal()).Result;
+                }).Result;
                 Assert.IsFalse(response.IsSuccess);
-                Assert.IsNull(response.Data);
             }
             // confirmation matching
             {
-                Result<IAuthResponse> response = AuthService.Register(new AuthRequest()
+                Result response = AuthService.Register(new RegistrationRequest()
                 {
                     Email = "confirm@test.com",
                     Password = "12345678",
                     Confirmation = "123456"
-                }, new ClaimsPrincipal()).Result;
+                }).Result;
                 Assert.IsFalse(response.IsSuccess);
-                Assert.IsNull(response.Data);
             }
             // invalid email
             {
-                Result<IAuthResponse> response = AuthService.Register(new AuthRequest()
+                Result response = AuthService.Register(new RegistrationRequest()
                 {
                     Email = ".123",
                     Password = "123456",
                     Confirmation = "123456"
-                }, new ClaimsPrincipal()).Result;
+                }).Result;
                 Assert.IsFalse(response.IsSuccess);
-                Assert.IsNull(response.Data);
             }
         }
 
         [TestMethod]
         public void SignInFailTest()
         {
-            Result<IAuthResponse> response = AuthService.SignIn(new AuthRequest()
+            Result<AuthResponse> response = AuthService.SignIn(new SignInRequest()
             {
                 Email = "test@test.com",
-                Password = " 123"
-            }, new ClaimsPrincipal()).Result;
+                Password = " 123",
+                GrantType = "password"
+            }).Result;
             Assert.IsFalse(response.IsSuccess);
             Assert.IsNull(response.Data);
         }
@@ -137,8 +164,8 @@ namespace Tests.Auth
         [TestMethod]
         public void GetIdFailTest()
         {
-            Result<int> resultId = AuthService.GetId(new ClaimsPrincipal());
-            Assert.IsFalse(resultId.IsSuccess);
+            Result<User> resultUser = AuthService.GetUser(string.Empty);
+            Assert.IsFalse(resultUser.IsSuccess);
         }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Auth
 {
-    public class AuthResponse : IAuthResponse
+    public class AuthResponse
     {
         public string AccessToken { get; }
         public string RefreshToken { get; }

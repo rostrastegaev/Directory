@@ -22,8 +22,8 @@ namespace Auth
         {
             var claims = new Claim[]
             {
-                new Claim(ClaimTypes.Sid, _user.Id.ToString()),
-                new Claim(ClaimTypes.Email, _user.Email)
+                new Claim(JwtRegisteredClaimNames.Sid, _user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, _user.Email)
             };
             var identity = new ClaimsIdentity(claims);
 

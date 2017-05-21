@@ -46,7 +46,7 @@ namespace Auth
             }
             catch (ArgumentNullException)
             {
-                throw;
+                return Result<User>.Error(ErrorCodes.NOT_AUTH);
             }
             catch (ArgumentException)
             {

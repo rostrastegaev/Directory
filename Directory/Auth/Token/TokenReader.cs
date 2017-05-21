@@ -16,8 +16,8 @@ namespace Auth
 
         public User ToUser()
         {
-            var claimId = _token.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.Sid));
-            var claimEmail = _token.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.Email));
+            var claimId = _token.Claims.FirstOrDefault(c => c.Type.Equals(JwtRegisteredClaimNames.Sid));
+            var claimEmail = _token.Claims.FirstOrDefault(c => c.Type.Equals(JwtRegisteredClaimNames.Email));
             if (!int.TryParse(claimId.Value, out int id))
             {
                 return null;
