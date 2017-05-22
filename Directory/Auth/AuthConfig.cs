@@ -1,4 +1,6 @@
-﻿namespace Auth
+﻿using Microsoft.IdentityModel.Tokens;
+
+namespace Auth
 {
     public class AuthConfig
     {
@@ -7,5 +9,6 @@
         public int Lifetime { get; private set; }
         public int PasswordLength { get; private set; }
         public string Key { get; private set; }
+        public SigningCredentials Credentials { get; set; }
     }
 }

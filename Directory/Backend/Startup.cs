@@ -1,18 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Common;
 using Backend.Modules;
 using Auth;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Swashbuckle.AspNetCore.Swagger;
+using System;
+using Microsoft.AspNetCore.Http;
 
 namespace Backend
 {
@@ -30,15 +27,14 @@ namespace Backend
 
         public IConfigurationRoot Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // Add framework services.
-            services.AddMvc();
+            services.AddMvcCore().AddAuthorization();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             var commonModule = new CommonModule(Configuration);
             commonModule.Register(services);
             new DALModule(commonModule.ConfigurationService).Register(services);
-            new AuthModule(commonModule.ConfigurationService).Register(services);
+            new AuthModule(commonModule.ConfigurationService, commonModule.DefaultEncoding).Register(services);
             new BLModule().Register(services);
 
 #if DEBUG
@@ -49,13 +45,12 @@ namespace Backend
 #endif
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app,
             ILoggerFactory logFactory,
             AuthConfig authConfig,
             Encoding encoding)
         {
-            logFactory.AddFile("Log/log.txt");
+            logFactory.AddFile(Configuration.GetSection("Logging"));
 
             app.UseDefaultFiles();
             app.UseStaticFiles();
@@ -65,13 +60,12 @@ namespace Backend
                 AutomaticChallenge = true,
                 TokenValidationParameters = new TokenValidationParameters()
                 {
-                    ValidateIssuer = true,
                     ValidIssuer = authConfig.Issuer,
-                    ValidateAudience = true,
                     ValidAudience = authConfig.Audience,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(encoding.GetBytes(authConfig.Key)),
+                    ClockSkew = TimeSpan.Zero
                 }
             });
             app.UseMvc();

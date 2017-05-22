@@ -3,10 +3,7 @@ using Common;
 using DAL;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Tests.DAL;
 
 namespace Tests.BL
@@ -33,25 +30,25 @@ namespace Tests.BL
         [TestMethod]
         public void BLRecordAddTest()
         {
-            int count = _recordRepo.GetAll().Result.Data.Count();
+            int count = _recordRepo.GetAll().Result.Count();
             Result result = _recordOperations.Save(new RecordModel(), _userId).Result;
             Assert.IsTrue(result.IsSuccess);
-            Assert.AreEqual(count + 1, _recordRepo.GetAll().Result.Data.Count());
+            Assert.AreEqual(count + 1, _recordRepo.GetAll().Result.Count());
         }
 
         [TestMethod]
         public void BLRecordAddFailTest()
         {
-            int count = _recordRepo.GetAll().Result.Data.Count();
+            int count = _recordRepo.GetAll().Result.Count();
             Result result = _recordOperations.Save(new RecordModel() { Id = 5 }, _userId).Result;
             Assert.IsFalse(result.IsSuccess);
-            Assert.AreEqual(count, _recordRepo.GetAll().Result.Data.Count());
+            Assert.AreEqual(count, _recordRepo.GetAll().Result.Count());
         }
 
         [TestMethod]
         public void BLRecordUpdateTest()
         {
-            int count = _recordRepo.GetAll().Result.Data.Count();
+            int count = _recordRepo.GetAll().Result.Count();
             var record = _recordOperations.Get(1, _userId).Result;
             int id = record.Data.Id;
             var recordResult = _recordOperations.Update(new RecordModel() { Id = id, Info = "test" }, _userId).Result;

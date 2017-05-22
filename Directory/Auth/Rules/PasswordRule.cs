@@ -11,7 +11,7 @@ namespace Auth
             _config = config;
         }
 
-        public Result Validate(IAuthRequest request)
+        public Result Validate(RegistrationRequest request)
         {
             Result result = new Result(true);
             if (!request.Password.Equals(request.Confirmation))

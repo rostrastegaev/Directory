@@ -18,44 +18,55 @@ namespace Tests.DAL
             _items = items;
         }
 
-        public Task<Result> Add(T entity)
+        public Task Add(T entity)
         {
             _items.Add(entity);
-            return Task.FromResult(Result.Success());
+            return Task.CompletedTask;
         }
 
-        public Task<Result> Add(IEnumerable<T> entities)
+        public Task Add(IEnumerable<T> entities)
         {
             foreach (var entity in entities)
             {
                 _items.Add(entity);
             }
-            return Task.FromResult(Result.Success());
+            return Task.CompletedTask;
         }
 
-        public Task<Result> Delete(T entity)
+        public Task Delete(T entity)
         {
-            Result result = _items.Remove(entity) ? Result.Success() : Result.Error(1);
-            return Task.FromResult(result);
+            if (!_items.Remove(entity))
+            {
+                return Task.FromException(new DALMockException("Delete single entity exception"));
+            }
+            return Task.CompletedTask;
         }
 
-        public Task<Result> Delete(IEnumerable<T> entities)
+        public Task Delete(IEnumerable<T> entities)
         {
             bool tempResult = true;
             foreach (var entity in entities)
             {
                 tempResult &= _items.Remove(entity);
             }
-            return Task.FromResult(tempResult ? Result.Success() : Result.Error(1));
+            if (!tempResult)
+            {
+                return Task.FromException(new DALMockException("Delete many entities exception"));
+            }
+            return Task.CompletedTask;
         }
 
-        public Task<Result> Delete(int id)
+        public Task Delete(int id)
         {
             T entity = _items.FirstOrDefault(e => e.Id == id);
-            return Task.FromResult(_items.Remove(entity) ? Result.Success() : Result.Error(1));
+            if (_items.Remove(entity))
+            {
+                return Task.FromException(new DALMockException("Delete by id entity exception"));
+            }
+            return Task.CompletedTask;
         }
 
-        public Task<Result> Delete(IEnumerable<int> ids)
+        public Task Delete(IEnumerable<int> ids)
         {
             bool tempResult = true;
             foreach (var id in ids)
@@ -63,67 +74,70 @@ namespace Tests.DAL
                 T entity = _items.FirstOrDefault(e => e.Id == id);
                 tempResult &= _items.Remove(entity);
             }
-            return Task.FromResult(tempResult ? Result.Success() : Result.Error(1));
+            if (!tempResult)
+            {
+                return Task.FromException(new DALMockException("Delete many entities by id exception"));
+            }
+            return Task.CompletedTask;
         }
 
-        public Task<Result<T>> Get(int id)
+        public Task<T> Get(int id)
         {
             T entity = _items.FirstOrDefault(e => e.Id == id);
-            return Task.FromResult(Result<T>.Success(entity));
+            return Task.FromResult(entity);
         }
 
-        public Task<Result<T>> Get(Expression<Func<T, bool>> expression)
+        public Task<T> Get(Expression<Func<T, bool>> expression)
         {
             T entity = _items.FirstOrDefault(expression.Compile());
-            return Task.FromResult(Result<T>.Success(entity));
+            return Task.FromResult(entity);
         }
 
-        public Task<Result<IEnumerable<T>>> GetAll()
+        public Task<IEnumerable<T>> GetAll()
         {
-            return Task.FromResult(Result<IEnumerable<T>>.Success(_items));
+            return Task.FromResult<IEnumerable<T>>(_items);
         }
 
-        public Task<Result<IEnumerable<T>>> GetMany(Expression<Func<T, bool>> expression)
+        public Task<IEnumerable<T>> GetMany(Expression<Func<T, bool>> expression)
         {
-            return Task.FromResult(Result<IEnumerable<T>>.Success(_items.Where(expression.Compile())));
+            return Task.FromResult(_items.Where(expression.Compile()));
         }
 
-        public Task<Result<IFetchResult<T>>> GetMany(Expression<Func<T, bool>> expression, IFetch fetch)
+        public Task<IEnumerable<T>> GetMany(Expression<Func<T, bool>> expression, IFetch fetch)
         {
             IEnumerable<T> entities = _items.Where(expression.Compile())
                 .Skip(fetch.PageNumber * fetch.PageSize)
                 .Take(fetch.PageSize);
-            return Task.FromResult(Result<IFetchResult<T>>.Success(
-                new FetchResult<T>(entities, fetch.PageNumber, fetch.PageSize)));
+            return Task.FromResult<IEnumerable<T>>(entities);
         }
 
-        public Task<Result> Update(T entity)
+        public Task Update(T entity)
         {
             T entityInCollection = _items.FirstOrDefault(e => e.Id == entity.Id);
             if (entityInCollection == null)
             {
-                return Task.FromResult(Result.Error(1));
+                return Task.FromException(new DALMockException("Update entity not found"));
             }
             int index = _items.IndexOf(entityInCollection);
             _items.RemoveAt(index);
             _items.Insert(index, entity);
-            return Task.FromResult(Result.Success());
+            return Task.CompletedTask;
         }
 
-        public Task<Result> Update(IEnumerable<T> entities)
+        public Task Update(IEnumerable<T> entities)
         {
             foreach (var entity in entities)
             {
                 T entityInCollection = _items.FirstOrDefault(e => e.Id == entity.Id);
                 if (entityInCollection == null)
                 {
-                    return Task.FromResult(Result.Error(1));
+                    return Task.FromException(new DALMockException("Update entity not found"));
                 }
                 int index = _items.IndexOf(entityInCollection);
                 _items.RemoveAt(index);
                 _items.Insert(index, entity);
             }
-            return Task.FromResult(Result.Success());
+            return Task.CompletedTask;
         }
     }
 }

@@ -7,7 +7,7 @@ namespace Backend.Controllers
 {
     [AllowAnonymous]
     [Route("api/account")]
-    public class AccountController : Controller
+    public class AccountController
     {
         private IAuthService _authService;
 
@@ -18,17 +18,18 @@ namespace Backend.Controllers
 
         [HttpPost]
         [Route("register")]
-        public async Task<IActionResult> Register([FromBody]AuthRequest request)
+        public async Task<IActionResult> Register([FromBody]RegistrationRequest request)
         {
-            var result = await _authService.Register(request, User);
+            var result = await _authService.Register(request);
             return new JsonResult(result);
+            
         }
 
         [HttpPost]
         [Route("signin")]
-        public async Task<IActionResult> SignIn([FromBody]AuthRequest request)
+        public async Task<IActionResult> SignIn([FromBody]SignInRequest request)
         {
-            var result = await _authService.SignIn(request, User);
+            var result = await _authService.SignIn(request);
             return new JsonResult(result);
         }
     }

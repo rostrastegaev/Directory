@@ -29,18 +29,20 @@ namespace BL
         {
             try
             {
-                Result<Record> resultRecord = Check(await _recordRepo.Get(id), userId, out Record record);
+                Result<Record> resultRecord = Check(await _recordRepo.Get(id), userId);
+                var record = resultRecord.Data;
                 if (!resultRecord.IsSuccess)
                 {
                     return Result.Error(resultRecord.ErrorCodes);
                 }
-                var result = await _recordRepo.Delete(id);
-                _dataService.SaveChanges();
-                if (result.IsSuccess)
+
+                await _recordRepo.Delete(id);
+                if (_dataService.SaveChanges() == 0)
                 {
-                    _logger.LogInformation($"Record {record} has been deleted");
+                    return Result.Error(ErrorCodes.OPERATION_ERROR);
                 }
-                return result;
+                _logger.LogInformation($"Record {record} has been deleted");
+                return Result.Success();
             }
             catch (Exception ex)
             {
@@ -54,18 +56,20 @@ namespace BL
             try
             {
                 Record record = recordModel.ToEntity();
-                Result<Record> resultRecord = Check(await _recordRepo.Get(record.Id), userId, out record);
+                Result<Record> resultRecord = Check(await _recordRepo.Get(record.Id), userId);
+                record = resultRecord.Data;
                 if (!resultRecord.IsSuccess)
                 {
                     return Result.Error(resultRecord.ErrorCodes);
                 }
-                var result = await _recordRepo.Delete(record);
-                _dataService.SaveChanges();
-                if (result.IsSuccess)
+
+                await _recordRepo.Delete(record);
+                if (_dataService.SaveChanges() == 0)
                 {
-                    _logger.LogInformation($"Record {record} has been deleted.");
+                    return Result.Error(ErrorCodes.OPERATION_ERROR);
                 }
-                return result;
+                _logger.LogInformation($"Record {record} has been deleted.");
+                return Result.Success();
             }
             catch (Exception ex)
             {
@@ -78,12 +82,12 @@ namespace BL
         {
             try
             {
-                Result<Record> resultRecord = Check(await _recordRepo.Get(id), userId, out Record record);
+                Result<Record> resultRecord = Check(await _recordRepo.Get(id), userId);
                 if (!resultRecord.IsSuccess)
                 {
                     return Result<IModel<Record>>.Error(resultRecord.ErrorCodes);
                 }
-                return Result<IModel<Record>>.Success(new RecordModel(record));
+                return Result<IModel<Record>>.Success(new RecordModel(resultRecord.Data));
             }
             catch (Exception ex)
             {
@@ -97,13 +101,9 @@ namespace BL
             try
             {
                 var expression = _fetchProvider.Compile(fetch, userId);
-                var resultRecords = await _recordRepo.GetMany(expression, fetch);
-                if (!resultRecords.IsSuccess)
-                {
-                    return Result<IFetchResult<IModel<Record>>>.Error(resultRecords.ErrorCodes);
-                }
+                var findedRecords = await _recordRepo.GetMany(expression, fetch);
                 List<IModel<Record>> records = new List<IModel<Record>>();
-                foreach (var record in resultRecords.Data.Items)
+                foreach (var record in findedRecords)
                 {
                     records.Add(new RecordModel(record));
                 }
@@ -122,22 +122,15 @@ namespace BL
         {
             try
             {
-                Result<Record> resultRecord = Check(await _recordRepo.Get(recordId), userId, out Record record);
+                Result<Record> resultRecord = Check(await _recordRepo.Get(recordId), userId);
+                var record = resultRecord.Data;
                 if (!resultRecord.IsSuccess)
                 {
                     return Result<Image>.Error(resultRecord.ErrorCodes);
                 }
                 IRepository<Image> imageRepo = _dataService.GetRepository<Image>();
-                Result<Image> resultImage = await imageRepo.Get(i => i.RecordId == record.Id);
-                if (resultImage.Data == null)
-                {
-                    resultImage.AddError(ErrorCodes.NOT_FOUND);
-                }
-                if (!resultImage.IsSuccess)
-                {
-                    return Result<Image>.Error(resultImage.ErrorCodes);
-                }
-                return Result<Image>.Success(resultImage.Data);
+                Image image = await imageRepo.Get(i => i.RecordId == record.Id);
+                return Result<Image>.Success(image);
             }
             catch (Exception ex)
             {
@@ -155,14 +148,15 @@ namespace BL
                 {
                     return Result.Error(ErrorCodes.ALREADY_EXISTS);
                 }
+
                 record.UserId = userId;
-                var result = await _recordRepo.Add(record);
-                _dataService.SaveChanges();
-                if (result.IsSuccess)
+                await _recordRepo.Add(record);
+                if (_dataService.SaveChanges() == 0)
                 {
-                    _logger.LogInformation($"Record {record} has been saved.");
+                    return Result.Error(ErrorCodes.OPERATION_ERROR);
                 }
-                return result;
+                _logger.LogInformation($"Record {record} has been saved.");
+                return Result.Success();
             }
             catch (Exception ex)
             {
@@ -180,7 +174,9 @@ namespace BL
                 {
                     return Result.Error(ErrorCodes.NOT_FOUND);
                 }
-                Result<Record> resultRecord = Check(await _recordRepo.Get(record.Id), userId, out Record recordEntity);
+
+                Result<Record> resultRecord = Check(await _recordRepo.Get(record.Id), userId);
+                var recordEntity = resultRecord.Data;
                 if (!resultRecord.IsSuccess)
                 {
                     return Result.Error(resultRecord.ErrorCodes);
@@ -188,13 +184,13 @@ namespace BL
 
                 string logPart = $"Record {recordEntity}";
                 recordEntity.Update(record);
-                var result = await _recordRepo.Update(recordEntity);
-                _dataService.SaveChanges();
-                if (result.IsSuccess)
+                await _recordRepo.Update(recordEntity);
+                if (_dataService.SaveChanges() == 0)
                 {
-                    _logger.LogInformation(logPart + $" has been updated to {recordEntity}");
+                    return Result.Error(ErrorCodes.OPERATION_ERROR);
                 }
-                return result;
+                _logger.LogInformation(logPart + $" has been updated to {recordEntity}");
+                return Result.Success();
             }
             catch (Exception ex)
             {
@@ -207,18 +203,15 @@ namespace BL
         {
             try
             {
-                Result<Record> resultRecord = Check(await _recordRepo.Get(recordId), userId, out Record record);
+                Result<Record> resultRecord = Check(await _recordRepo.Get(recordId), userId);
+                var record = resultRecord.Data;
                 if (!resultRecord.IsSuccess)
                 {
                     return Result.Error(resultRecord.ErrorCodes);
                 }
                 IRepository<Image> imageRepo = _dataService.GetRepository<Image>();
-                Result<Image> resultImage = await imageRepo.Get(i => i.RecordId == record.Id);
-                if (!resultImage.IsSuccess)
-                {
-                    return Result.Error(resultImage.ErrorCodes);
-                }
-                Image image = resultImage.Data ?? new Image() { RecordId = record.Id };
+                Image image = await imageRepo.Get(i => i.RecordId == record.Id) ??
+                    new Image() { RecordId = record.Id };
 
                 using (var stream = file.OpenReadStream())
                 using (BinaryReader reader = new BinaryReader(stream))
@@ -227,7 +220,11 @@ namespace BL
                     image.File = bytes;
                     image.ContentType = file.ContentType;
                 }
-                _dataService.SaveChanges();
+                await imageRepo.Add(image);
+                if (_dataService.SaveChanges() == 0)
+                {
+                    return Result.Error(ErrorCodes.OPERATION_ERROR);
+                }
                 return Result.Success();
             }
             catch (Exception ex)
@@ -237,15 +234,15 @@ namespace BL
             return Result.Error(ErrorCodes.UNEXPECTED);
         }
 
-        private Result<Record> Check(Result<Record> resultRecord, int userId, out Record recordEntity)
+        private Result<Record> Check(Record record, int userId)
         {
-            recordEntity = resultRecord.Data;
-            if (recordEntity == null)
+            Result<Record> resultRecord = Result<Record>.Success(record);
+            if (record == null)
             {
                 resultRecord.AddError(ErrorCodes.NOT_FOUND);
                 return resultRecord;
             }
-            if (recordEntity.UserId != userId)
+            if (record.UserId != userId)
             {
                 resultRecord.AddError(ErrorCodes.AUTH_NOT_ASSIGNED_TO_USER);
             }

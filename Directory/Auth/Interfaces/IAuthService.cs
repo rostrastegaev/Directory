@@ -1,13 +1,13 @@
-﻿using System.Security.Claims;
-using Common;
+﻿using Common;
+using DAL;
 using System.Threading.Tasks;
 
 namespace Auth
 {
     public interface IAuthService
     {
-        Result<int> GetId(ClaimsPrincipal principal);
-        Task<Result<IAuthResponse>> SignIn(IAuthRequest request, ClaimsPrincipal principal);
-        Task<Result<IAuthResponse>> Register(IAuthRequest request, ClaimsPrincipal principal);
+        Result<User> GetUser(string token);
+        Task<Result<AuthResponse>> SignIn(SignInRequest request);
+        Task<Result> Register(RegistrationRequest request);
     }
 }

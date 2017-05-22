@@ -10,16 +10,18 @@ namespace Backend.Modules
         private IConfiguration _config;
 
         public IConfigurationService ConfigurationService { get; }
+        public Encoding DefaultEncoding { get; }
 
         public CommonModule(IConfiguration config)
         {
             _config = config;
             ConfigurationService = new ConfigurationService(_config);
+            DefaultEncoding = Encoding.Unicode;
         }
 
         public void Register(IServiceCollection services)
         {
-            services.AddSingleton<Encoding>(Encoding.Unicode);
+            services.AddSingleton<Encoding>(DefaultEncoding);
             services.AddSingleton<IConfigurationService>(ConfigurationService);
         }
     }
