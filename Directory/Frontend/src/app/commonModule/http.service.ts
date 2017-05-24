@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { Http, Headers, Response } from '@angular/http';
 import { Result } from './result';
 import { Observable } from 'rxjs/Observable';
-import { ForkJoinObservable } from 'rxjs/observable/ForkJoinObservable';
 import 'rxjs/Rx';
 
 export interface IHttpHeader {
