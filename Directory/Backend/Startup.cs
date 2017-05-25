@@ -7,7 +7,6 @@ using Backend.Modules;
 using Auth;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Swashbuckle.AspNetCore.Swagger;
 using System;
 using Microsoft.AspNetCore.Http;
 
@@ -15,8 +14,11 @@ namespace Backend
 {
     public class Startup
     {
+        private IHostingEnvironment _env;
+
         public Startup(IHostingEnvironment env)
         {
+            _env = env;
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -31,18 +33,11 @@ namespace Backend
         {
             services.AddMvcCore().AddAuthorization();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            var commonModule = new CommonModule(Configuration);
+            var commonModule = new CommonModule(Configuration, _env);
             commonModule.Register(services);
             new DALModule(commonModule.ConfigurationService).Register(services);
             new AuthModule(commonModule.ConfigurationService, commonModule.DefaultEncoding).Register(services);
             new BLModule().Register(services);
-
-#if DEBUG
-            services.AddSwaggerGen(options =>
-            {
-                options.SwaggerDoc("v1", new Info() { Title = "Directory API", Version = "v1" });
-            });
-#endif
         }
 
         public void Configure(IApplicationBuilder app,
@@ -69,14 +64,6 @@ namespace Backend
                 }
             });
             app.UseMvc();
-
-#if DEBUG
-            app.UseSwagger();
-            app.UseSwaggerUI(options =>
-            {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "Directory API v1");
-            });
-#endif
         }
     }
 }

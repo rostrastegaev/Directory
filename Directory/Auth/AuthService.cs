@@ -12,7 +12,6 @@ namespace Auth
 {
     public class AuthService : IAuthService
     {
-        private AuthConfig _config;
         private IDataService _dataService;
         private IRepository<User> _usersRepo;
         private HashAlgorithm _hash;
