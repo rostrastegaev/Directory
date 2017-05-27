@@ -38,38 +38,34 @@ export class HttpService {
     }
 
     get(url: string): Observable<Result> {
-        return this.runRequest(() => this._http.get(url, {headers: this._httpHeaders})
-            .map(this.toResult));
+        return this.runRequest(() => this._http.get(url, {headers: this._httpHeaders}));
     }
 
     post(url: string, obj: any): Observable<Result> {
-        return this.runRequest(() => this._http.post(url, obj, {headers: this._httpHeaders})
-            .map(this.toResult));
+        return this.runRequest(() => this._http.post(url, obj, {headers: this._httpHeaders}));
     }
 
     put(url: string, obj: any): Observable<Result> {
-        return this.runRequest(() => this._http.put(url, obj, {headers: this._httpHeaders})
-            .map(this.toResult));
+        return this.runRequest(() => this._http.put(url, obj, {headers: this._httpHeaders}));
     }
 
     delete(url: string): Observable<Result> {
-        return this.runRequest(() => this._http.delete(url, {headers: this._httpHeaders})
-            .map(this.toResult));
+        return this.runRequest(() => this._http.delete(url, {headers: this._httpHeaders}));
     }
 
-    private runRequest(method: () => Observable<Result>): Observable<Result> {
-        return Observable.merge(this.notifyInterceptors()).flatMap(method);
+    private runRequest(method: () => Observable<Response>): Observable<Result> {
+        return this.notifyInterceptors().flatMap(() => method().map(this.toResult));
     }
 
     private toResult(response: Response): Result {
         return Result.fromJSON(response.json());
     }
 
-    private notifyInterceptors(): Observable<Result>[] {
+    private notifyInterceptors(): Observable<Result> {
         let results = new Array<Observable<Result>>();
         for (let interceptor of this._interceptors) {
             results.push(interceptor.intercept());
         }
-        return results;
+        return new ForkJoinObservable(results);
     }
 }
