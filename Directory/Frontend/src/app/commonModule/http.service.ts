@@ -3,7 +3,8 @@ import { Http, Headers, Response } from '@angular/http';
 import { Result } from './result';
 import { Observable } from 'rxjs/Observable';
 import { ForkJoinObservable } from 'rxjs/observable/ForkJoinObservable';
-import 'rxjs/Rx';
+import 'rxjs/add/operator/mergeMap';
+import 'rxjs/add/operator/map';
 
 export interface IHttpHeader {
     header: string;
