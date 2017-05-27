@@ -68,8 +68,6 @@ namespace Backend
                     ClockSkew = TimeSpan.Zero
                 }
             });
-            app.UseMvc();
-
 #if DEBUG
             app.UseSwagger();
             app.UseSwaggerUI(options =>
@@ -77,6 +75,8 @@ namespace Backend
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "Directory API v1");
             });
 #endif
+
+            app.UseMvc();
         }
     }
 }

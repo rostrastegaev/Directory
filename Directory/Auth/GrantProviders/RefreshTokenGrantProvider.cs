@@ -38,7 +38,7 @@ namespace Auth
                 var tokenCreator = new TokenCreator(user, _config);
                 var accessToken = tokenCreator.CreateToken();
                 return Result<AuthResponse>.Success(
-                    new AuthResponse(accessToken.ToString(), null, accessToken.ValidTo));
+                    new AuthResponse(accessToken.ToString(), request.Token, accessToken.ValidTo));
             });
         }
     }
